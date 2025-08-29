@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YourVerse - Home</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- Integrated CSS Theme --- */
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem 1rem;
+      background: linear-gradient(-45deg, #ffdde1, #ee9ca7, #ffdde1, #ee9ca7);
+      background-size: 400% 400%;
+      animation: gradient 15s ease infinite;
+    }
+
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.5);
+      padding: 2.5rem;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      text-align: center;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .your {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #5b2c32;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    
+    #welcome-message {
+        color: #7c5a5f;
+        margin-top: -15px;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        min-height: 1.2em; /* Prevents layout shift */
+    }
+
+    input[type="text"], input[type="file"], input[type="number"] {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 10px 0;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.1);
+      background: rgba(255,255,255,0.7);
+      outline: none;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    input::placeholder { color: #aaa; }
+
+    button {
+      background: #8e6c73;
+      color: white;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      width: 100%;
+      cursor: pointer;
+      margin-top: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover { background: #7a5c62; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+
+    .profile-section {
+      text-align: left;
+      margin-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.5);
+      padding-top: 1.5rem;
+    }
+
+    .profile-section h3 {
+        text-align: center;
+        color: #5b2c32;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #5b2c32;
+        font-weight: 500;
+    }
+
+    .photo-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+    }
+
+    #photo-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    
+    #photo-upload { display: none; }
+
+    .voice-controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .voice-btn {
+        width: auto;
+        padding: 10px 20px;
+    }
+
+    #recordBtn { background-color: #28a745; }
+    #recordBtn:hover { background-color: #218838; }
+
+    #stopBtn { background-color: #dc3545; }
+    #stopBtn:hover { background-color: #c82333; }
+
+    #audioPlayback {
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="header">
+      <h2 class="your">Welcome to YourVerse! ✨</h2>
+      <p id="welcome-message">Loading...</p>
+    </div>
+
+    <div class="profile-section">
+      <h3>Complete Your Profile</h3>
+
+      <!-- Profile Photo -->
+      <div class="form-group">
+        <label for="photo-upload">Profile Photo</label>
+        <div class="photo-container" onclick="document.getElementById('photo-upload').click();">
+            <img id="photo-preview" src="https://placehold.co/120x120/ffdde1/5b2c32?text=Upload" alt="Profile preview">
+            <input type="file" id="photo-upload" accept="image/*">
+        </div>
+      </div>
+
+      <!-- Age -->
+      <div class="form-group">
+        <label for="age-input">Age</label>
+        <input type="number" id="age-input" placeholder="e.g., 25">
+      </div>
+
+      <!-- Hobbies -->
+      <div class="form-group">
+        <label for="hobbies-input">Hobbies (comma-separated)</label>
+        <input type="text" id="hobbies-input" placeholder="e.g., Reading, Hiking, Coding">
+      </div>
+
+      <!-- Skills -->
+      <div class="form-group">
+        <label for="skills-input">Skills (comma-separated)</label>
+        <input type="text" id="skills-input" placeholder="e.g., JavaScript, Public Speaking">
+      </div>
+
+      <!-- Voice Introduction -->
+      <div class="form-group">
+        <label>Voice Introduction</label>
+        <div class="voice-controls">
+            <button id="recordBtn" class="voice-btn">Start Recording</button>
+            <button id="stopBtn" class="voice-btn" disabled>Stop Recording</button>
+        </div>
+        <audio id="audioPlayback" controls style="display:none;"></audio>
+      </div>
+
+      <button id="saveProfileBtn">Save & View Dashboard</button>
+      <button id="logoutDeleteBtn" style="background-color: #dc3545; margin-top: 15px;">Logout & Delete Account</button>
+    </div>
+
+  </div>
+
+  <script type="module" src="./js/home.js"></script>
+</body>
+</html>
+

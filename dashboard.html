@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2563eb;
+        }
+        .profile-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 9999px;
+            height: 10px;
+        }
+        .progress-bar {
+            background-color: #3b82f6;
+            height: 10px;
+            border-radius: 9999px;
+            transition: width 0.5s ease-in-out;
+        }
+
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex h-screen bg-white">
+        <!-- Sidebar -->
+        <aside class="w-64 flex flex-col bg-[#0f172a] text-white transition-all duration-300">
+            <div class="flex items-center justify-center h-20 border-b border-slate-700">
+                 <svg class="h-8 w-auto text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.25a.75.75 0 01-.75-.75v-7.5a.75.75 0 01.75-.75h7.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75zM13.5 21h7.5a.75.75 0 00.75-.75v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 00-.75.75v7.5a.75.75 0 00.75.75zM3.75 9h16.5a.75.75 0 00.75-.75V3.75a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v4.5a.75.75 0 00.75.75z" />
+                </svg>
+                <h1 class="text-2xl font-bold ml-2">YourVerse</h1>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-4 py-6 space-y-2">
+                <a href="#" class="nav-item active flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-blue-600">
+                    <i class="fa-solid fa-house w-5 h-5 mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors">
+                    <i class="fa-solid fa-face-smile w-5 h-5 mr-3"></i>
+                    Face Generator
+                </a>
+                <a href="#" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors">
+                    <i class="fa-solid fa-waveform w-5 h-5 mr-3"></i>
+                    Voice Generator
+                </a>
+                <a href="#" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors">
+                     <i class="fa-solid fa-comments w-5 h-5 mr-3"></i>
+                    Chat
+                </a>
+                <a href="#" class="nav-item flex items-center px-4 py-3 text-sm font-medium rounded-lg hover:bg-slate-700 transition-colors">
+                   <i class="fa-solid fa-headset w-5 h-5 mr-3"></i>
+                    Customer Care
+                </a>
+            </nav>
+
+             <!-- User Profile -->
+            <div class="px-4 py-4 mt-auto border-t border-slate-700">
+                <div class="flex items-center">
+                    <img id="sidebar-user-avatar" class="h-10 w-10 rounded-full object-cover bg-slate-500" src="https://placehold.co/100x100/e2e8f0/475569?text=U" alt="User avatar" >
+                    <div class="ml-3">
+                        <p id="sidebar-user-name" class="text-sm font-semibold">Loading...</p>
+                        <p id="sidebar-user-email" class="text-xs text-slate-400">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-slate-50">
+            <div class="p-8">
+                <!-- Header -->
+                <header class="pb-6">
+                    <h1 id="main-greeting" class="text-4xl font-extrabold text-slate-900 tracking-tight">Hello! 👋</h1>
+                    <p class="mt-2 text-slate-600">Here's your personal universe at a glance.</p>
+                </header>
+                
+                <!-- Main Grid -->
+                <div id="dashboard-content" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                    <!-- Left Column: User Profile -->
+                    <div class="md:col-span-2 space-y-8">
+                        <!-- Profile Card -->
+                        <div class="profile-card p-8 rounded-2xl shadow-lg fade-in">
+                            <div class="flex items-center space-x-6">
+                                <img id="main-user-avatar" class="h-24 w-24 rounded-full object-cover ring-4 ring-white" src="https://placehold.co/120x120/a3bffa/ffffff?text=U" alt="User avatar">
+                                <div>
+                                    <h2 id="main-user-name" class="text-2xl font-bold text-slate-800">Loading...</h2>
+                                    <p id="main-user-email" class="text-slate-600">Loading...</p>
+                                    <div class="mt-3">
+                                        <p class="text-sm font-medium text-slate-700">Profile Completion</p>
+                                        <div class="progress-bar-container mt-1">
+                                            <div id="profile-progress" class="progress-bar" style="width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 border-t border-slate-300 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                                <div><strong class="text-slate-900">Age:</strong> <span id="user-age">Not set</span></div>
+                                <div><strong class="text-slate-900">Hobbies:</strong> <span id="user-hobbies">Not set</span></div>
+                                <div class="md:col-span-2"><strong class="text-slate-900">Skills:</strong> <span id="user-skills">Not set</span></div>
+                                <div class="md:col-span-2">
+                                    <strong class="text-slate-900 block mb-2">Voice Intro:</strong>
+                                    <audio id="user-audio" controls class="w-full" style="display: none;"></audio>
+                                    <p id="no-audio" class="text-slate-500">No voice intro recorded.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- Quick Actions -->
+                        <div class="bg-white p-6 rounded-2xl shadow-md fade-in" style="animation-delay: 0.2s;">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
+                             <div class="flex flex-wrap gap-4">
+                                <button onclick="window.location.href='home.html'" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-edit mr-2"></i> Edit Profile</button>
+                                <button class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-magic mr-2"></i> New Face</button>
+                                <button class="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-microphone-alt mr-2"></i> New Voice</button>
+                             </div>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Right Column: Stats -->
+                    <div class="space-y-8">
+                        <div class="stat-card bg-white p-6 rounded-2xl shadow-md fade-in" style="animation-delay: 0.1s;">
+                           <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4"><i class="fas fa-brain fa-lg"></i></div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Creations Made</p>
+                                    <p class="text-2xl font-bold">12</p>
+                                </div>
+                           </div>
+                        </div>
+                         <div class="stat-card bg-white p-6 rounded-2xl shadow-md fade-in" style="animation-delay: 0.2s;">
+                           <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4"><i class="fas fa-clock fa-lg"></i></div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Time Spent (Hrs)</p>
+                                    <p class="text-2xl font-bold">8.5</p>
+                                </div>
+                           </div>
+                        </div>
+                         <div class="stat-card bg-white p-6 rounded-2xl shadow-md fade-in" style="animation-delay: 0.3s;">
+                           <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4"><i class="fas fa-comments fa-lg"></i></div>
+                                <div>
+                                    <p class="text-sm text-slate-500">Chats Started</p>
+                                    <p class="text-2xl font-bold">3</p>
+                                </div>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    
+    <script type="module">
+    // --- CORRECTED SCRIPT ---
+    // Import from your existing config and the correct SDK paths
+    import { auth, db } from './js/firebase-config.js';
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+    // --- AUTHENTICATION LISTENER ---
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            // User is signed in, fetch their data
+            loadUserProfile(user);
+        } else {
+            // User is signed out, auth.js will handle the redirect
+            console.log("No user signed in.");
+            clearUserProfile();
+        }
+    });
+
+    // --- UI ELEMENT REFERENCES ---
+    const ui = {
+        sidebarAvatar: document.getElementById('sidebar-user-avatar'),
+        sidebarName: document.getElementById('sidebar-user-name'),
+        sidebarEmail: document.getElementById('sidebar-user-email'),
+        mainGreeting: document.getElementById('main-greeting'),
+        mainAvatar: document.getElementById('main-user-avatar'),
+        mainName: document.getElementById('main-user-name'),
+        mainEmail: document.getElementById('main-user-email'),
+        progress: document.getElementById('profile-progress'),
+        age: document.getElementById('user-age'),
+        hobbies: document.getElementById('user-hobbies'),
+        skills: document.getElementById('user-skills'),
+        audioPlayer: document.getElementById('user-audio'),
+        noAudio: document.getElementById('no-audio'),
+        dashboardContent: document.getElementById('dashboard-content')
+    }
+
+    // --- LOAD USER PROFILE DATA ---
+    async function loadUserProfile(user) {
+        ui.dashboardContent.style.opacity = '0'; // Hide while loading
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        const displayName = user.displayName || 'New User';
+        const displayEmail = user.email || 'No email';
+        // Use a placeholder if user.photoURL is null
+        const authPhotoURL = user.photoURL || `https://placehold.co/120x120/a3bffa/ffffff?text=${displayName.charAt(0)}`;
+        
+        // Basic Info (from Auth)
+        ui.sidebarAvatar.src = authPhotoURL;
+        ui.sidebarName.textContent = displayName;
+        ui.sidebarEmail.textContent = displayEmail;
+        
+        ui.mainGreeting.innerHTML = `Hello ${displayName.split(' ')[0]} 👋`;
+        ui.mainAvatar.src = authPhotoURL;
+        ui.mainName.textContent = displayName;
+        ui.mainEmail.textContent = displayEmail;
+        
+        let completion = 20; // Start with 20% for basic info
+
+        // Detailed Info (from Firestore)
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            
+            ui.age.textContent = data.age || 'Not set';
+            if (data.age) completion += 20;
+
+            ui.hobbies.textContent = data.hobbies || 'Not set';
+             if (data.hobbies) completion += 20;
+
+            ui.skills.textContent = data.skills || 'Not set';
+             if (data.skills) completion += 20;
+            
+            // Override auth photoURL if a custom one was uploaded
+            if (data.photoURL) {
+                 ui.sidebarAvatar.src = data.photoURL;
+                 ui.mainAvatar.src = data.photoURL;
+                 completion += 10;
+            }
+             
+            if (data.voiceURL) {
+                ui.audioPlayer.src = data.voiceURL;
+                ui.audioPlayer.style.display = 'block';
+                ui.noAudio.style.display = 'none';
+                completion += 10;
+            } else {
+                ui.audioPlayer.style.display = 'none';
+                ui.noAudio.style.display = 'block';
+            }
+        }
+         ui.progress.style.width = `${completion}%`;
+         ui.dashboardContent.style.opacity = '1';
+    }
+
+    // --- CLEAR USER PROFILE ON LOGOUT ---
+    function clearUserProfile() {
+        // This function remains the same
+        const loadingText = "Not signed in";
+        const defaultAvatar = "https://placehold.co/100x100/e2e8f0/475569?text=U";
+
+        ui.sidebarAvatar.src = defaultAvatar;
+        ui.sidebarName.textContent = loadingText;
+        ui.sidebarEmail.textContent = "";
+        ui.mainGreeting.innerHTML = `Please Sign In 👋`;
+        ui.mainAvatar.src = defaultAvatar;
+        ui.mainName.textContent = loadingText;
+        ui.mainEmail.textContent = "";
+        ui.age.textContent = 'N/A';
+        ui.hobbies.textContent = 'N/A';
+        ui.skills.textContent = 'N/A';
+        ui.audioPlayer.style.display = 'none';
+        ui.noAudio.style.display = 'block';
+        ui.progress.style.width = '0%';
+    }
+
+    // --- SIDEBAR NAVIGATION SCRIPT ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // This function remains the same
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                navItems.forEach(i => i.classList.remove('active', 'bg-blue-600'));
+                this.classList.add('active', 'bg-blue-600');
+            });
+        });
+    });
+</script>
+</body>
+</html>
+

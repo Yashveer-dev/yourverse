@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YourVerse - Login</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="card">
+    <div id="login-view">
+      <h2 class = "your">Welcome to YourVerse!!✨</h2>
+      <form id="login-form">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit">Login</button>
+      </form>
+      <div class="links">
+        <button onclick="window.location.href='forgot_password.html'" class="link-btn">
+            Forgot Password?
+        </button>
+        <!-- The "Forgot Password" button has been removed -->
+        <button onclick="window.location.href='register.html'" class="link-btn">
+          New User? Register
+        </button>
+      </div>
+      <div class="divider">
+        <span>OR</span>
+      </div>
+      <div class="oauth">
+        <button id="google-login" class="oauth-btn google">Login with Google</button>
+        <button id="github-login" class="oauth-btn github">Login with GitHub</button>
+      </div>
+    </div>
+
+    <p id="form-message" class="form-message" style="display: none;"></p>
+  </div>
+
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>
