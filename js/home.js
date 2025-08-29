@@ -1,5 +1,5 @@
 // This script handles all functionality on the home page.
-import { auth, db, storage } from './js/firebase-config.js';
+import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
