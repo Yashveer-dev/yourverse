@@ -8,10 +8,10 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-s
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDtRxa8dEhid1zbQni1OLqF3VWa8HnP7a0", // This key is publicly visible and safe to use.
+  apiKey: "AIzaSyDtRxa8dEhid1zbQni1OLqF3VWa8HnP7a0",
   authDomain: "yourverse-23eab.firebaseapp.com",
   projectId: "yourverse-23eab",
-  storageBucket: "yourverse-23eab.appspot.com",
+  storageBucket: "yourverse-23eab.firebasestorage.app",
   messagingSenderId: "697721327664",
   appId: "1:697721327664:web:6f2e1cc842d3883a9bddf5",
   measurementId: "G-W612WM9MZZ"
