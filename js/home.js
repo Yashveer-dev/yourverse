@@ -1,13 +1,9 @@
 // js/home.js
 
-// This script handles all functionality on the home page.
-// We still need 'storage' for the voice intro, but not for photos.
-import { auth, db, storage } from './firebase-config.js';
+// Import auth and db from Firebase, storage is no longer needed
+import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-// Keep storage functions for the voice recording
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
-
 
 // --- DOM Elements ---
 const welcomeMessage = document.getElementById('welcome-message');
@@ -60,17 +56,16 @@ const loadUserProfile = async (uid) => {
     }
 };
 
-// --- NEW: Cloudinary Upload Function ---
-const uploadToCloudinary = async (file) => {
-    // ❗ Replace with your actual Cloudinary credentials
-    const CLOUD_NAME = "dngunn5k8"; 
-    const UPLOAD_PRESET = "yourverse_preset"; // The preset you created in Cloudinary settings
+// --- REFACTORED: Cloudinary Upload Function ---
+// This function can now handle any file type by specifying the resource type and preset.
+const uploadToCloudinary = async (file, resourceType, uploadPreset) => {
+    const CLOUD_NAME = "dngunn5k8"; // Your actual Cloud Name
 
-    const url = `https://api.cloudinary.com/v1_1/dngunn5k8/image/upload`;
+    const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
     
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", UPLOAD_PRESET);
+    formData.append("upload_preset", uploadPreset);
 
     try {
         const response = await fetch(url, {
@@ -78,10 +73,10 @@ const uploadToCloudinary = async (file) => {
             body: formData,
         });
         if (!response.ok) {
-            throw new Error("Upload to Cloudinary failed");
+            throw new Error(`Upload failed for ${file.name || 'audio blob'}`);
         }
         const data = await response.json();
-        return data.secure_url; // Returns the HTTPS URL of the uploaded image
+        return data.secure_url; // Return the secure URL
     } catch (error) {
         console.error("Error uploading to Cloudinary:", error);
         return null;
@@ -134,7 +129,7 @@ stopBtn.addEventListener('click', () => {
     }
 });
 
-// --- MODIFIED: Save Profile Logic to use Cloudinary ---
+// --- MODIFIED: Save Profile Logic to use Cloudinary for BOTH photo and audio ---
 saveProfileBtn.addEventListener('click', async () => {
     if (!currentUser) return alert("You're not logged in.");
 
@@ -149,29 +144,32 @@ saveProfileBtn.addEventListener('click', async () => {
             skills: skillsInput.value,
         };
 
-        // **MODIFIED PART:** Upload photo to Cloudinary if a new one was selected
+        // Upload photo to Cloudinary if a new one was selected
         const photoFile = photoUploadInput.files[0];
         if (photoFile) {
-            const photoURL = await uploadToCloudinary(photoFile);
+            // We specify the 'image' resource type and the image preset
+            const photoURL = await uploadToCloudinary(photoFile, 'image', 'yourverse_preset');
             if (photoURL) {
                 profileData.photoURL = photoURL;
             } else {
-                // Handle potential upload failure
                 throw new Error("Photo upload failed. Please try again.");
             }
         }
 
-        // Upload voice if a new one was recorded (still uses Firebase Storage)
+        // Upload voice if a new one was recorded
         if (audioBlob) {
-            const voiceRef = ref(storage, `voice_intros/${uid}/intro.webm`);
-            const voiceSnapshot = await uploadBytes(voiceRef, audioBlob);
-            profileData.voiceURL = await getDownloadURL(voiceSnapshot.ref);
+            // We specify the 'video' resource type and the audio preset
+            const voiceURL = await uploadToCloudinary(audioBlob, 'video', 'yourverse_audio_preset');
+            if (voiceURL) {
+                profileData.voiceURL = voiceURL;
+            } else {
+                throw new Error("Voice recording upload failed. Please try again.");
+            }
         }
 
-        // Save all data (including the Cloudinary URL) to Firestore
+        // Save all data (including both Cloudinary URLs) to Firestore
         await setDoc(doc(db, "users", uid), profileData, { merge: true });
         
-        // Redirect to the dashboard on successful save
         window.location.href = 'dashboard.html';
 
     } catch (error) {
@@ -202,27 +200,15 @@ logoutDeleteBtn.addEventListener('click', async () => {
     try {
         const uid = currentUser.uid;
 
-        // Note: Deleting images from Cloudinary requires a secure backend function.
-        // We will skip that here and only delete the assets from Firebase.
+        // Note: Securely deleting Cloudinary assets requires a backend function.
+        // The user's files will remain on Cloudinary, but the links to them in Firestore will be deleted.
         
-        // 1. Delete Voice Intro from Firebase Storage
-        const voiceRef = ref(storage, `voice_intros/${uid}/intro.webm`);
-        try {
-            await deleteObject(voiceRef);
-            console.log("Voice intro deleted successfully.");
-        } catch (error) {
-            if (error.code !== 'storage/object-not-found') {
-                throw error;
-            }
-            console.log("No voice intro to delete.");
-        }
-        
-        // 2. Delete User Document from Firestore
+        // 1. Delete User Document from Firestore
         const userDocRef = doc(db, "users", uid);
         await deleteDoc(userDocRef);
         console.log("Firestore document deleted successfully.");
 
-        // 3. Delete the User from Firebase Authentication
+        // 2. Delete the User from Firebase Authentication
         await deleteUser(currentUser);
         
         alert("Your account has been successfully deleted.");
