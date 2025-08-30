@@ -174,3 +174,40 @@ logoutDeleteBtn.addEventListener('click', async () => {
 
         // 1. Delete Voice Intro from Firebase Storage
         const voiceRef = ref(storage, `voice_intros/${uid}/intro.webm`);
+        
+        // **--- CODE WAS CUT OFF HERE ---**
+        try {
+            await deleteObject(voiceRef);
+            console.log("Voice intro deleted successfully.");
+        } catch (error) {
+            if (error.code !== 'storage/object-not-found') {
+                throw error; // Re-throw other errors
+            }
+            console.log("No voice intro to delete or it was already deleted.");
+        }
+        
+        // 2. Delete User Document from Firestore
+        const userDocRef = doc(db, "users", uid);
+        await deleteDoc(userDocRef);
+        console.log("Firestore document deleted successfully.");
+
+        // 3. Delete the User from Firebase Authentication
+        await deleteUser(currentUser);
+        
+        alert("Your account has been successfully deleted.");
+        window.location.replace('index.html'); // Redirect to login page
+
+    } catch (error) {
+        console.error("Error deleting account:", error);
+        // If the operation is recent-login-sensitive, Firebase will throw an error.
+        if (error.code === 'auth/requires-recent-login') {
+            alert("This is a sensitive operation and requires you to log in again before deleting your account.");
+        } else {
+            alert(`Failed to delete account: ${error.message}`);
+        }
+    } finally {
+        // Re-enable the button in case of failure
+        logoutDeleteBtn.disabled = false;
+        logoutDeleteBtn.textContent = 'Logout & Delete Account';
+    }
+});
