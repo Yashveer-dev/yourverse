@@ -1,3 +1,5 @@
+// js/home.js
+
 // This script handles all functionality on the home page.
 import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -27,26 +29,20 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         welcomeMessage.textContent = `Welcome, ${user.displayName || user.email}!`;
-        // Check if user has a profile and redirect if they do
-        loadUserProfileAndRedirect(user.uid);
+        // **FIX:** Call the updated function to only load profile data, not redirect.
+        loadUserProfile(user.uid);
     }
     // No 'else' needed because auth.js handles redirecting logged-out users.
 });
 
-// --- Load User Profile and Redirect if it Exists ---
-const loadUserProfileAndRedirect = async (uid) => {
+// --- **FIX:** Renamed function and removed the redirect logic ---
+// This function now ONLY loads data, allowing existing users to edit their profile.
+const loadUserProfile = async (uid) => {
     try {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
-        // If the user document exists and has an age, they are a returning user.
-        // Redirect them to the main dashboard.
-        if (docSnap.exists() && docSnap.data().age) {
-            window.location.replace('dashboard.html');
-            return; // Stop executing the rest of the function
-        }
-
-        // If the profile is incomplete or doesn't exist, populate fields with any available data.
+        // If a profile exists, populate the form fields with the data.
         if (docSnap.exists()) {
             const data = docSnap.data();
             ageInput.value = data.age || '';
@@ -177,47 +173,4 @@ logoutDeleteBtn.addEventListener('click', async () => {
         const uid = currentUser.uid;
 
         // 1. Delete Voice Intro from Firebase Storage
-        // The voice intro has a predictable path, so we can delete it.
         const voiceRef = ref(storage, `voice_intros/${uid}/intro.webm`);
-        try {
-            await deleteObject(voiceRef);
-            console.log("Voice intro deleted successfully.");
-        } catch (error) {
-            // It's safe to ignore "object-not-found" error if the user never uploaded a voice intro.
-            if (error.code !== 'storage/object-not-found') {
-                throw error; // Re-throw other errors
-            }
-            console.log("No voice intro to delete or it was already deleted.");
-        }
-        
-        // Note: Deleting the profile photo is not reliably possible with the current setup
-        // because its original filename is not stored in Firestore. 
-        // A robust solution would store the full storage path in Firestore upon upload.
-
-        // 2. Delete User Document from Firestore
-        const userDocRef = doc(db, "users", uid);
-        await deleteDoc(userDocRef);
-        console.log("Firestore document deleted successfully.");
-
-        // 3. Delete the User from Firebase Authentication
-        // This must be the final step.
-        await deleteUser(currentUser);
-        
-        alert("Your account has been successfully deleted.");
-        window.location.replace('index.html'); // Redirect to login page
-
-    } catch (error) {
-        console.error("Error deleting account:", error);
-        // If the operation is recent-login-sensitive, Firebase will throw an error.
-        if (error.code === 'auth/requires-recent-login') {
-            alert("This is a sensitive operation and requires you to log in again before deleting your account.");
-            // Optionally, you could sign the user out here.
-        } else {
-            alert(`Failed to delete account: ${error.message}`);
-        }
-    } finally {
-        // Re-enable the button in case of failure
-        logoutDeleteBtn.disabled = false;
-        logoutDeleteBtn.textContent = 'Logout & Delete Account';
-    }
-});
