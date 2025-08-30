@@ -1,10 +1,13 @@
 // js/home.js
 
 // This script handles all functionality on the home page.
+// We still need 'storage' for the voice intro, but not for photos.
 import { auth, db, storage } from './firebase-config.js';
 import { onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+// Keep storage functions for the voice recording
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
+
 
 // --- DOM Elements ---
 const welcomeMessage = document.getElementById('welcome-message');
@@ -29,20 +32,16 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
         welcomeMessage.textContent = `Welcome, ${user.displayName || user.email}!`;
-        // **FIX:** Call the updated function to only load profile data, not redirect.
         loadUserProfile(user.uid);
     }
-    // No 'else' needed because auth.js handles redirecting logged-out users.
 });
 
-// --- **FIX:** Renamed function and removed the redirect logic ---
-// This function now ONLY loads data, allowing existing users to edit their profile.
+// --- Load User Profile Data ---
 const loadUserProfile = async (uid) => {
     try {
         const docRef = doc(db, "users", uid);
         const docSnap = await getDoc(docRef);
 
-        // If a profile exists, populate the form fields with the data.
         if (docSnap.exists()) {
             const data = docSnap.data();
             ageInput.value = data.age || '';
@@ -61,6 +60,34 @@ const loadUserProfile = async (uid) => {
     }
 };
 
+// --- NEW: Cloudinary Upload Function ---
+const uploadToCloudinary = async (file) => {
+    // ❗ Replace with your actual Cloudinary credentials
+    const CLOUD_NAME = "dngunn5k8"; 
+    const UPLOAD_PRESET = "yourverse_preset"; // The preset you created in Cloudinary settings
+
+    const url = `https://api.cloudinary.com/v1_1/dngunn5k8/image/upload`;
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData,
+        });
+        if (!response.ok) {
+            throw new Error("Upload to Cloudinary failed");
+        }
+        const data = await response.json();
+        return data.secure_url; // Returns the HTTPS URL of the uploaded image
+    } catch (error) {
+        console.error("Error uploading to Cloudinary:", error);
+        return null;
+    }
+};
+
 
 // --- Photo Preview Logic ---
 photoUploadInput.addEventListener('change', (event) => {
@@ -74,7 +101,7 @@ photoUploadInput.addEventListener('change', (event) => {
     }
 });
 
-// --- Voice Recording Logic ---
+// --- Voice Recording Logic (Unchanged) ---
 recordBtn.addEventListener('click', async () => {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -107,7 +134,7 @@ stopBtn.addEventListener('click', () => {
     }
 });
 
-// --- Save Profile Logic ---
+// --- MODIFIED: Save Profile Logic to use Cloudinary ---
 saveProfileBtn.addEventListener('click', async () => {
     if (!currentUser) return alert("You're not logged in.");
 
@@ -122,22 +149,26 @@ saveProfileBtn.addEventListener('click', async () => {
             skills: skillsInput.value,
         };
 
-        // Upload photo if a new one was selected
+        // **MODIFIED PART:** Upload photo to Cloudinary if a new one was selected
         const photoFile = photoUploadInput.files[0];
         if (photoFile) {
-            const photoRef = ref(storage, `profile_photos/${uid}/${photoFile.name}`);
-            const photoSnapshot = await uploadBytes(photoRef, photoFile);
-            profileData.photoURL = await getDownloadURL(photoSnapshot.ref);
+            const photoURL = await uploadToCloudinary(photoFile);
+            if (photoURL) {
+                profileData.photoURL = photoURL;
+            } else {
+                // Handle potential upload failure
+                throw new Error("Photo upload failed. Please try again.");
+            }
         }
 
-        // Upload voice if a new one was recorded
+        // Upload voice if a new one was recorded (still uses Firebase Storage)
         if (audioBlob) {
             const voiceRef = ref(storage, `voice_intros/${uid}/intro.webm`);
             const voiceSnapshot = await uploadBytes(voiceRef, audioBlob);
             profileData.voiceURL = await getDownloadURL(voiceSnapshot.ref);
         }
 
-        // Save all data to Firestore
+        // Save all data (including the Cloudinary URL) to Firestore
         await setDoc(doc(db, "users", uid), profileData, { merge: true });
         
         // Redirect to the dashboard on successful save
@@ -152,7 +183,7 @@ saveProfileBtn.addEventListener('click', async () => {
     }
 });
 
-// --- Logout and Delete Account Logic ---
+// --- MODIFIED: Logout and Delete Account Logic ---
 const logoutDeleteBtn = document.getElementById('logoutDeleteBtn');
 
 logoutDeleteBtn.addEventListener('click', async () => {
@@ -160,7 +191,6 @@ logoutDeleteBtn.addEventListener('click', async () => {
         return alert("No user is currently logged in.");
     }
 
-    // Confirmation prompt to prevent accidental deletion
     const isConfirmed = confirm("Are you sure you want to delete your account? This action is permanent and cannot be undone.");
     if (!isConfirmed) {
         return;
@@ -172,18 +202,19 @@ logoutDeleteBtn.addEventListener('click', async () => {
     try {
         const uid = currentUser.uid;
 
+        // Note: Deleting images from Cloudinary requires a secure backend function.
+        // We will skip that here and only delete the assets from Firebase.
+        
         // 1. Delete Voice Intro from Firebase Storage
         const voiceRef = ref(storage, `voice_intros/${uid}/intro.webm`);
-        
-        // **--- CODE WAS CUT OFF HERE ---**
         try {
             await deleteObject(voiceRef);
             console.log("Voice intro deleted successfully.");
         } catch (error) {
             if (error.code !== 'storage/object-not-found') {
-                throw error; // Re-throw other errors
+                throw error;
             }
-            console.log("No voice intro to delete or it was already deleted.");
+            console.log("No voice intro to delete.");
         }
         
         // 2. Delete User Document from Firestore
@@ -195,18 +226,16 @@ logoutDeleteBtn.addEventListener('click', async () => {
         await deleteUser(currentUser);
         
         alert("Your account has been successfully deleted.");
-        window.location.replace('index.html'); // Redirect to login page
+        window.location.replace('index.html');
 
     } catch (error) {
         console.error("Error deleting account:", error);
-        // If the operation is recent-login-sensitive, Firebase will throw an error.
         if (error.code === 'auth/requires-recent-login') {
-            alert("This is a sensitive operation and requires you to log in again before deleting your account.");
+            alert("This is a sensitive operation. Please log in again to delete your account.");
         } else {
             alert(`Failed to delete account: ${error.message}`);
         }
     } finally {
-        // Re-enable the button in case of failure
         logoutDeleteBtn.disabled = false;
         logoutDeleteBtn.textContent = 'Logout & Delete Account';
     }
