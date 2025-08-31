@@ -55,7 +55,16 @@
             border-radius: 9999px;
             transition: width 0.5s ease-in-out;
         }
-
+        /* For Logout Popover */
+        .popover-enter {
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+            transform: translateY(10px);
+            opacity: 0;
+        }
+        .popover-enter-active {
+            transform: translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -94,9 +103,18 @@
                 </a>
             </nav>
 
-             <!-- User Profile -->
-            <div class="px-4 py-4 mt-auto border-t border-slate-700">
-                <div class="flex items-center">
+             <!-- User Profile & Logout -->
+            <div class="px-4 py-4 mt-auto border-t border-slate-700 relative">
+                <!-- Logout Popover -->
+                <div id="logout-popover" class="absolute bottom-full left-4 right-4 mb-2 bg-slate-800 rounded-lg shadow-lg p-2 hidden popover-enter">
+                    <button id="logout-btn" class="w-full text-left flex items-center px-3 py-2 text-sm rounded-md hover:bg-slate-700 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket w-5 h-5 mr-3"></i>
+                        Logout
+                    </button>
+                </div>
+
+                <!-- Clickable Profile Area -->
+                <div id="sidebar-profile-button" class="flex items-center cursor-pointer p-2 -m-2 rounded-lg hover:bg-slate-700/50 transition-colors">
                     <img id="sidebar-user-avatar" class="h-10 w-10 rounded-full object-cover bg-slate-500" src="https://placehold.co/100x100/e2e8f0/475569?text=U" alt="User avatar" >
                     <div class="ml-3">
                         <p id="sidebar-user-name" class="text-sm font-semibold">Loading...</p>
@@ -150,10 +168,13 @@
                          <!-- Quick Actions -->
                         <div class="bg-white p-6 rounded-2xl shadow-md fade-in" style="animation-delay: 0.2s;">
                             <h3 class="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
+                            <!-- Hidden File Inputs -->
+                            <input type="file" id="avatar-upload" accept="image/*" hidden>
+                            <input type="file" id="voice-upload" accept="audio/*" hidden>
                              <div class="flex flex-wrap gap-4">
                                 <button onclick="window.location.href='home.html'" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-edit mr-2"></i> Edit Profile</button>
-                                <button class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-magic mr-2"></i> New Face</button>
-                                <button class="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-microphone-alt mr-2"></i> New Voice</button>
+                                <button id="new-face-btn" class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-magic mr-2"></i> New Face</button>
+                                <button id="new-voice-btn" class="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105"><i class="fas fa-microphone-alt mr-2"></i> New Voice</button>
                              </div>
                         </div>
 
@@ -166,7 +187,7 @@
                                 <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4"><i class="fas fa-brain fa-lg"></i></div>
                                 <div>
                                     <p class="text-sm text-slate-500">Creations Made</p>
-                                    <p class="text-2xl font-bold">--</p>
+                                    <p class="text-2xl font-bold">12</p>
                                 </div>
                            </div>
                         </div>
@@ -175,7 +196,7 @@
                                 <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4"><i class="fas fa-clock fa-lg"></i></div>
                                 <div>
                                     <p class="text-sm text-slate-500">Time Spent (Hrs)</p>
-                                    <p class="text-2xl font-bold">--</p>
+                                    <p class="text-2xl font-bold">8.5</p>
                                 </div>
                            </div>
                         </div>
@@ -184,7 +205,7 @@
                                 <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4"><i class="fas fa-comments fa-lg"></i></div>
                                 <div>
                                     <p class="text-sm text-slate-500">Chats Started</p>
-                                    <p class="text-2xl font-bold">--</p>
+                                    <p class="text-2xl font-bold">3</p>
                                 </div>
                            </div>
                         </div>
@@ -194,23 +215,26 @@
             </div>
         </main>
     </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md opacity-0 transition-all duration-300 transform translate-y-[-20px]">
+        This is a message.
+    </div>
     
     <script type="module">
-    // --- CORRECTED SCRIPT ---
-    // Import from your existing config and the correct SDK paths
+    // --- UPDATED SCRIPT WITH CLOUDINARY ---
     import { auth, db } from './js/firebase-config.js';
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
     // --- AUTHENTICATION LISTENER ---
     onAuthStateChanged(auth, user => {
         if (user) {
-            // User is signed in, fetch their data
             loadUserProfile(user);
         } else {
-            // User is signed out, auth.js will handle the redirect
-            console.log("No user signed in.");
+            console.log("No user signed in. Redirecting...");
             clearUserProfile();
+            window.location.replace('index.html');
         }
     });
 
@@ -230,20 +254,21 @@
         audioPlayer: document.getElementById('user-audio'),
         noAudio: document.getElementById('no-audio'),
         dashboardContent: document.getElementById('dashboard-content')
-    }
-
+    };
+    const avatarUploadInput = document.getElementById('avatar-upload');
+    const voiceUploadInput = document.getElementById('voice-upload');
+    
     // --- LOAD USER PROFILE DATA ---
     async function loadUserProfile(user) {
-        ui.dashboardContent.style.opacity = '0'; // Hide while loading
+        // This function remains the same
+        ui.dashboardContent.style.opacity = '0';
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
 
         const displayName = user.displayName || 'New User';
         const displayEmail = user.email || 'No email';
-        // Use a placeholder if user.photoURL is null
-        const authPhotoURL = user.photoURL || `https://placehold.co/120x120/a3bffa/ffffff?text=${displayName.charAt(0)}`;
+        const authPhotoURL = user.photoURL || `https://placehold.co/120x120/a3bffa/ffffff?text=${displayName.charAt(0).toUpperCase()}`;
         
-        // Basic Info (from Auth)
         ui.sidebarAvatar.src = authPhotoURL;
         ui.sidebarName.textContent = displayName;
         ui.sidebarEmail.textContent = displayEmail;
@@ -253,28 +278,21 @@
         ui.mainName.textContent = displayName;
         ui.mainEmail.textContent = displayEmail;
         
-        let completion = 20; // Start with 20% for basic info
+        let completion = 20;
 
-        // Detailed Info (from Firestore)
         if (userSnap.exists()) {
             const data = userSnap.data();
-            
             ui.age.textContent = data.age || 'Not set';
             if (data.age) completion += 20;
-
             ui.hobbies.textContent = data.hobbies || 'Not set';
-             if (data.hobbies) completion += 20;
-
+            if (data.hobbies) completion += 20;
             ui.skills.textContent = data.skills || 'Not set';
-             if (data.skills) completion += 20;
-            
-            // Override auth photoURL if a custom one was uploaded
+            if (data.skills) completion += 20;
             if (data.photoURL) {
                  ui.sidebarAvatar.src = data.photoURL;
                  ui.mainAvatar.src = data.photoURL;
                  completion += 10;
             }
-             
             if (data.voiceURL) {
                 ui.audioPlayer.src = data.voiceURL;
                 ui.audioPlayer.style.display = 'block';
@@ -292,27 +310,125 @@
     // --- CLEAR USER PROFILE ON LOGOUT ---
     function clearUserProfile() {
         // This function remains the same
-        const loadingText = "Not signed in";
         const defaultAvatar = "https://placehold.co/100x100/e2e8f0/475569?text=U";
-
+        Object.values(ui).forEach(el => { if(el.tagName !== 'DIV') el.textContent = '' });
         ui.sidebarAvatar.src = defaultAvatar;
-        ui.sidebarName.textContent = loadingText;
-        ui.sidebarEmail.textContent = "";
-        ui.mainGreeting.innerHTML = `Please Sign In 👋`;
         ui.mainAvatar.src = defaultAvatar;
-        ui.mainName.textContent = loadingText;
-        ui.mainEmail.textContent = "";
-        ui.age.textContent = 'N/A';
-        ui.hobbies.textContent = 'N/A';
-        ui.skills.textContent = 'N/A';
+        ui.mainGreeting.innerHTML = `Please Sign In 👋`;
         ui.audioPlayer.style.display = 'none';
         ui.noAudio.style.display = 'block';
         ui.progress.style.width = '0%';
     }
 
+    // --- TOAST NOTIFICATION ---
+    function showToast(message, isError = false) {
+        // This function remains the same
+        const toast = document.getElementById('toast-notification');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-md transition-all duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+        }, 3000);
+    }
+
+    // --- EVENT LISTENERS ---
+    document.getElementById('new-face-btn').addEventListener('click', () => avatarUploadInput.click());
+    document.getElementById('new-voice-btn').addEventListener('click', () => voiceUploadInput.click());
+    avatarUploadInput.addEventListener('change', (e) => handleAvatarUpload(e.target.files[0]));
+    voiceUploadInput.addEventListener('change', (e) => handleVoiceUpload(e.target.files[0]));
+    const profileButton = document.getElementById('sidebar-profile-button');
+    const logoutPopover = document.getElementById('logout-popover');
+    profileButton.addEventListener('click', () => {
+        logoutPopover.classList.toggle('hidden');
+        logoutPopover.classList.toggle('popover-enter-active');
+    });
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        showToast('Logging out...');
+        signOut(auth).catch(error => showToast(error.message, true));
+    });
+    document.addEventListener('click', (event) => {
+        if (!profileButton.contains(event.target) && !logoutPopover.contains(event.target)) {
+            logoutPopover.classList.add('hidden');
+            logoutPopover.classList.remove('popover-enter-active');
+        }
+    });
+
+    // --- CLOUDINARY UPLOAD AND UPDATE FUNCTIONS ---
+    
+    async function handleCloudinaryUpload(file, resourceType) {
+        // !!! IMPORTANT: REPLACE THESE WITH YOUR CLOUDINARY DETAILS !!!
+        const CLOUD_NAME = 'YOUR_CLOUD_NAME';
+        const UPLOAD_PRESET = 'YOUR_UPLOAD_PRESET'; // Your UNSIGNED preset
+        
+        const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        
+        try {
+            const response = await fetch(url, { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('Upload failed');
+            const data = await response.json();
+            return data.secure_url;
+        } catch (error) {
+            console.error('Cloudinary Upload Error:', error);
+            showToast('Media upload failed.', true);
+            throw error;
+        }
+    }
+
+    async function handleAvatarUpload(file) {
+        if (!file) return;
+        const user = auth.currentUser;
+        if (!user) return showToast('You must be logged in to upload.', true);
+
+        showToast('Uploading new face...');
+        try {
+            const photoURL = await handleCloudinaryUpload(file, 'image');
+            
+            await updateProfile(user, { photoURL });
+            await updateDoc(doc(db, "users", user.uid), { photoURL });
+
+            ui.sidebarAvatar.src = photoURL;
+            ui.mainAvatar.src = photoURL;
+
+            showToast('Profile picture updated successfully!');
+            await loadUserProfile(user);
+        } catch (error) {
+            // Error toast is handled in the upload function
+        }
+    }
+
+    async function handleVoiceUpload(file) {
+        if (!file) return;
+        const user = auth.currentUser;
+        if (!user) return showToast('You must be logged in to upload.', true);
+
+        showToast('Uploading new voice intro...');
+        try {
+            // For audio, Cloudinary often uses the 'video' resource type for storage and transformations
+            const voiceURL = await handleCloudinaryUpload(file, 'video');
+            
+            await updateDoc(doc(db, "users", user.uid), { voiceURL });
+            
+            ui.audioPlayer.src = voiceURL;
+            ui.audioPlayer.style.display = 'block';
+            ui.noAudio.style.display = 'none';
+
+            showToast('Voice intro updated successfully!');
+            await loadUserProfile(user);
+        } catch (error) {
+            // Error toast is handled in the upload function
+        }
+    }
+    
     // --- SIDEBAR NAVIGATION SCRIPT ---
     document.addEventListener('DOMContentLoaded', function() {
-        // This function remains the same
         const navItems = document.querySelectorAll('.nav-item');
         navItems.forEach(item => {
             item.addEventListener('click', function(e) {
